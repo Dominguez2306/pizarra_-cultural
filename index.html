@@ -1,0 +1,1551 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Pizarra Táctica · Cultural y Deportiva Leonesa</title>
+<style>
+  /* ===================== TEMA CULTURAL LEONESA ===================== */
+  :root{
+    --white:#ffffff; --white-2:#e6e6e6;
+    --red:#d3122a;   --red-2:#ff2d4a;
+    --gold:#ffd21f;
+    --panel:#1a1315; --panel-2:#241a1d;
+    --line:rgba(255,255,255,.14);
+    --txt:#f6f1f2; --muted:#c9b3b8;
+    --ts: clamp(30px, 3.6vw, 52px);
+    --shadow: 0 10px 30px rgba(0,0,0,.45);
+  }
+  *{ box-sizing:border-box; }
+  html,body{ height:100%; }
+  body{
+    margin:0; height:100vh; height:100dvh; min-height:0;
+    display:flex; flex-direction:column;
+    font-family:"Segoe UI",system-ui,-apple-system,Roboto,Arial,sans-serif;
+    color:var(--txt);
+    background:
+      radial-gradient(1200px 700px at 12% -10%, rgba(211,18,42,.40), transparent 60%),
+      radial-gradient(1000px 700px at 100% 0%, rgba(255,255,255,.10), transparent 55%),
+      linear-gradient(180deg,#0b0708 0%, #171012 60%, #0b0708 100%);
+    -webkit-user-select:none; user-select:none; overflow:hidden;
+  }
+
+  /* ===================== CABECERA ===================== */
+  header.topbar{
+    display:flex; flex-wrap:wrap; align-items:center; gap:10px 14px;
+    padding:10px clamp(10px,2vw,22px);
+    background:linear-gradient(90deg, rgba(120,8,22,.95), rgba(20,10,12,.92) 55%, rgba(211,18,42,.95));
+    border-bottom:1px solid rgba(255,255,255,.18);
+    box-shadow:0 8px 26px rgba(0,0,0,.45);
+    position:sticky; top:0; z-index:60; backdrop-filter:blur(6px); flex:0 0 auto;
+  }
+  .brand{ display:flex; align-items:center; gap:11px; min-width:0; }
+  .crest{ width:32px; height:38px; flex:0 0 auto; filter:drop-shadow(0 3px 6px rgba(0,0,0,.5)); }
+  .brand h1{ margin:0; font-size:clamp(15px,1.4vw,20px); letter-spacing:.4px; text-transform:uppercase; line-height:1.05; }
+  .brand p{ margin:2px 0 0; font-size:11px; color:rgba(255,255,255,.82); letter-spacing:.5px; }
+
+  .modes{ display:flex; gap:6px; flex-wrap:wrap; margin-left:auto; }
+  .modebtn{
+    font:inherit; font-size:12.5px; color:#fff; cursor:pointer;
+    background:rgba(0,0,0,.22); border:1px solid rgba(255,255,255,.28);
+    border-radius:10px; padding:8px 12px; display:flex; align-items:center; gap:6px;
+    transition:background .12s, transform .08s;
+  }
+  .modebtn:hover{ background:rgba(255,255,255,.18); }
+  .modebtn.active{ background:var(--gold); color:#1a1200; border-color:var(--gold); font-weight:700; }
+  .modebtn:active{ transform:translateY(1px); }
+
+  .actions{ display:flex; gap:7px; flex-wrap:wrap; align-items:center; }
+  .actions label{
+    display:flex; align-items:center; gap:6px; font-size:12px;
+    background:rgba(0,0,0,.22); border:1px solid rgba(255,255,255,.2);
+    padding:6px 9px; border-radius:10px;
+  }
+  select,.actions button,.minibtn{
+    font:inherit; font-size:12.5px; color:#fff; cursor:pointer;
+    background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.28);
+    border-radius:10px; padding:8px 11px; transition:background .12s, transform .08s;
+  }
+  select{ padding:6px 8px; }
+  select option{ color:#06111f; }
+  .actions button:hover,.minibtn:hover{ background:rgba(255,255,255,.22); }
+  .actions button:active,.minibtn:active{ transform:translateY(1px); }
+  .tog.on{ background:rgba(237,187,0,.28); border-color:rgba(237,187,0,.7); }
+  #resetBtn{ background:rgba(255,255,255,.08); }
+  #downloadBtn{ background:rgba(237,187,0,.28); border-color:var(--gold); font-weight:700; }
+  #downloadBtn:hover{ background:rgba(237,187,0,.45); }
+
+  /* ===================== LAYOUT ===================== */
+  .board{ flex:1 1 auto; min-height:0; display:flex; gap:12px; align-items:stretch; padding:10px clamp(8px,1.4vw,16px) 6px; }
+  .pitch-wrap{ flex:1 1 auto; min-width:0; min-height:0; display:flex; align-items:center; justify-content:center; }
+
+  /* ===================== CAMPO ===================== */
+  .pitch{
+    --ratio:1.5441;
+    position:relative;
+    width:100%;
+    max-width:100%;
+    max-height:100%;
+    aspect-ratio:105 / 68;
+    border-radius:16px; overflow:hidden;
+    background:repeating-linear-gradient(90deg, #2f7d34 0 7.69%, #2a6f2f 7.69% 15.38%);
+    box-shadow:var(--shadow), inset 0 0 120px rgba(0,0,0,.45);
+    border:1px solid rgba(255,255,255,.25);
+    touch-action:none;
+    transition:width .35s ease, height .35s ease;
+  }
+  /* Barrido de luz animado sobre el césped */
+  .pitch::before{ content:""; position:absolute; inset:-40% -10%; pointer-events:none; z-index:1;
+    background:linear-gradient(115deg, transparent 40%, rgba(255,255,255,.10) 50%, transparent 60%);
+    background-size:280% 280%; animation:cesped 9s linear infinite; mix-blend-mode:screen; }
+  @keyframes cesped{ 0%{ background-position:200% 0; } 100%{ background-position:-120% 0; } }
+  .pitch::after{ content:""; position:absolute; inset:0; pointer-events:none;
+    background:radial-gradient(120% 120% at 50% 50%, transparent 55%, rgba(0,0,0,.35)); }
+  .pitch svg{ position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
+  .pitch.mode-draw .field-layer{ pointer-events:none; }
+  .pitch.mode-draw{ cursor:crosshair; }
+  .pitch.mode-cone{ cursor:copy; }
+  .pitch.mode-erase{ cursor:not-allowed; }
+
+  .field-layer{ position:absolute; inset:0; }
+
+  /* ===================== FICHAS ===================== */
+  .token{
+    position:absolute; width:var(--ts); height:var(--ts);
+    transform:translate(-50%,-50%); touch-action:none; cursor:grab; z-index:6;
+  }
+  .token .disc{
+    width:100%; height:100%; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    font-weight:800; font-size:calc(var(--ts) * .4); color:#fff;
+    border:2px solid rgba(211,18,42,.95);
+    box-shadow:0 4px 12px rgba(0,0,0,.5), inset 0 -4px 8px rgba(0,0,0,.28);
+    background-image:linear-gradient(160deg, rgba(255,255,255,.28), rgba(0,0,0,.18));
+    text-shadow:0 1px 2px rgba(0,0,0,.5);
+  }
+  .token.pos-GK  .disc{ background-color:#f2c200; color:#1a1200; border-color:#fff; text-shadow:none; }
+  .token.pos-DEF .disc{ background-color:#ffffff; color:#161616; border-color:var(--red); text-shadow:none; }
+  .token.pos-MID .disc{ background-color:var(--red); color:#fff; border-color:#fff; }
+  .token.pos-FWD .disc{ background-color:#7a0a16; color:#fff; border-color:#fff; }
+  .token.team-rival .disc{
+    background-color:#3a3a3a; color:#fff;
+    background-image:linear-gradient(160deg, rgba(255,255,255,.20), rgba(0,0,0,.35));
+    border-color:rgba(255,255,255,.95); text-shadow:0 1px 2px rgba(0,0,0,.6);
+  }
+  .token .name{
+    position:absolute; top:calc(100% + 3px); left:50%; transform:translateX(-50%);
+    white-space:nowrap; font-size:clamp(8px,.8vw,12px); font-weight:600;
+    background:rgba(3,10,18,.72); color:#fff; padding:1px 6px; border-radius:7px;
+    border:1px solid rgba(255,255,255,.16); pointer-events:none;
+  }
+  body.hide-names .token .name{ display:none; }
+  .token .rating{
+    position:absolute; top:-5px; right:-6px;
+    min-width:calc(var(--ts)*.52); height:calc(var(--ts)*.52); padding:0 3px;
+    background:var(--gold); color:#1a1200; font-weight:900;
+    font-size:calc(var(--ts)*.26); border-radius:999px;
+    display:flex; align-items:center; justify-content:center;
+    border:2px solid #0a1622; box-shadow:0 2px 6px rgba(0,0,0,.55); pointer-events:none;
+  }
+  body.hide-ratings .token .rating{ display:none; }
+  .token.dragging{ cursor:grabbing; z-index:30; }
+  .token.sel .disc{ outline:3px solid var(--gold); outline-offset:2px; }
+  .token.swap-target .disc{
+    outline:3px solid var(--gold); outline-offset:3px;
+    box-shadow:0 0 0 6px rgba(237,187,0,.35), 0 8px 20px rgba(0,0,0,.6);
+    animation:pulse .7s infinite alternate;
+  }
+  @keyframes pulse{ from{ transform:scale(1);} to{ transform:scale(1.08);} }
+  .token.ghost{ position:fixed; z-index:9999; pointer-events:none; opacity:.92; }
+  .token.ghost .disc{ outline:3px dashed rgba(255,255,255,.9); }
+
+  /* ===================== CONOS ===================== */
+  .cone{
+    position:absolute; width:22px; height:26px; transform:translate(-50%,-88%);
+    touch-action:none; cursor:grab; z-index:5; filter:drop-shadow(0 3px 4px rgba(0,0,0,.5));
+  }
+  .cone::before{
+    content:""; position:absolute; bottom:4px; left:50%; transform:translateX(-50%);
+    border-left:10px solid transparent; border-right:10px solid transparent;
+    border-bottom:20px solid #ff7a1a;
+  }
+  .cone::after{
+    content:""; position:absolute; bottom:0; left:50%; transform:translateX(-50%);
+    width:24px; height:6px; border-radius:3px; background:#c94f00;
+  }
+  .cone.sel{ filter:drop-shadow(0 0 6px var(--gold)); }
+
+  .ball{
+    position:absolute; transform:translate(-50%,-50%);
+    font-size:clamp(18px,2vw,26px); line-height:1;
+    cursor:grab; touch-action:none; z-index:5;
+    filter:drop-shadow(0 3px 4px rgba(0,0,0,.55));
+  }
+  .ball.sel{ filter:drop-shadow(0 0 6px var(--gold)); }
+
+  /* ===================== PANEL ===================== */
+  .panel{
+    flex:0 0 300px; max-width:300px;
+    background:linear-gradient(180deg, rgba(19,36,56,.94), rgba(10,20,32,.94));
+    border:1px solid var(--line); border-radius:16px; box-shadow:var(--shadow);
+    display:flex; flex-direction:column; overflow:hidden;
+  }
+  .panel-head{
+    padding:11px 14px; border-bottom:1px solid var(--line);
+    background:linear-gradient(90deg, rgba(211,18,42,.55), rgba(20,10,12,.6));
+  }
+  .panel-head h2{ margin:0; font-size:13px; letter-spacing:.6px; text-transform:uppercase; }
+  .teamtabs{ display:flex; gap:6px; }
+  .teamtabs-btn{
+    flex:1; font:inherit; font-size:12px; font-weight:700; cursor:pointer;
+    color:var(--muted); background:rgba(0,0,0,.30); border:1px solid var(--line);
+    border-radius:9px; padding:7px 8px;
+  }
+  .teamtabs-btn.active{ color:#fff; background:linear-gradient(90deg, rgba(211,18,42,.95), rgba(120,8,22,.9)); border-color:rgba(255,255,255,.4); }
+  .teamtabs-btn.active.rival{ background:linear-gradient(90deg,#4a4a4a,#141414); }
+  .panel-body{ padding:10px; overflow-y:auto; display:flex; flex-direction:column; gap:10px; }
+  .panel-body::-webkit-scrollbar{ width:9px; }
+  .panel-body::-webkit-scrollbar-thumb{ background:rgba(255,255,255,.18); border-radius:10px; }
+
+  .card{ background:rgba(255,255,255,.045); border:1px solid var(--line); border-radius:12px; padding:10px; }
+  .card h3{ margin:0 0 8px; font-size:11px; letter-spacing:.7px; text-transform:uppercase; color:#fff; opacity:.9; }
+
+  .statgrid{ display:grid; grid-template-columns:repeat(2,1fr); gap:7px; }
+  .stat{ background:rgba(255,255,255,.05); border:1px solid var(--line); border-radius:10px; padding:7px; text-align:center; }
+  .stat b{ display:block; font-size:18px; color:#fff; line-height:1.1; }
+  .stat span{ font-size:10.5px; color:var(--muted); }
+  .stat.gold b{ color:var(--gold); }
+
+  .muted{ color:var(--muted); font-size:12px; margin:0; line-height:1.5; }
+
+  .selhead{ display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+  .selnum{
+    width:36px; height:36px; border-radius:50%; flex:0 0 auto;
+    display:flex; align-items:center; justify-content:center; font-weight:800; color:#161616;
+    background:#ffffff; border:2px solid #fff;
+  }
+  .selhead.pos-GK .selnum{ background:#f2c200; color:#1a1200; }
+  .selhead.pos-DEF .selnum{ background:#ffffff; color:#161616; }
+  .selhead.pos-MID .selnum{ background:var(--red); color:#fff; }
+  .selhead.pos-FWD .selnum{ background:#7a0a16; color:#fff; }
+  .selmeta{ flex:1; min-width:0; }
+  .selmeta b{ display:block; font-size:14px; }
+  .selmeta span{ font-size:11px; color:var(--muted); }
+  .rating{
+    font-weight:900; font-size:13px; color:#1a1200; background:var(--gold);
+    padding:3px 8px; border-radius:8px; flex:0 0 auto;
+  }
+  .rating.r-high{ background:#37c76b; }
+  .rating.r-mid{ background:var(--gold); }
+  .rating.r-low{ background:#8aa2b8; }
+  .ratingEdit{ display:flex; align-items:center; gap:8px; font-size:12px; color:var(--muted); margin-bottom:8px; }
+  .ratingEdit input{
+    width:70px; font:inherit; font-size:13px; color:#fff; padding:5px 7px;
+    background:rgba(0,0,0,.3); border:1px solid var(--line); border-radius:8px;
+  }
+  .candTitle{ font-size:11px; color:var(--muted); margin:6px 0; }
+  .candlist{ display:flex; flex-direction:column; gap:5px; max-height:190px; overflow:auto; }
+  .cand{
+    display:flex; align-items:center; gap:8px; width:100%; text-align:left; cursor:pointer;
+    font:inherit; color:#fff; padding:6px 8px; border-radius:9px;
+    background:rgba(255,255,255,.06); border:1px solid var(--line);
+  }
+  .cand:hover{ background:rgba(255,255,255,.14); }
+  .cand .cnum{
+    width:26px; height:26px; border-radius:7px; flex:0 0 auto; font-weight:800; font-size:12px;
+    display:flex; align-items:center; justify-content:center; background:#ffffff; color:#161616;
+  }
+  .cand .cnum.pos-GK{ background:#f2c200; color:#1a1200; }
+  .cand .cnum.pos-DEF{ background:#ffffff; color:#161616; }
+  .cand .cnum.pos-MID{ background:var(--red); color:#fff; }
+  .cand .cnum.pos-FWD{ background:#7a0a16; color:#fff; }
+  .cand .cname{ flex:1; font-size:12.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+  .bench-list{ display:flex; flex-direction:column; gap:6px; max-height:220px; overflow:auto; touch-action:none; }
+  .bench-list::-webkit-scrollbar{ width:9px; }
+  .bench-list::-webkit-scrollbar-thumb{ background:rgba(255,255,255,.18); border-radius:10px; }
+  .bench-card{
+    display:flex; align-items:center; gap:9px; padding:6px 8px;
+    background:linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.03));
+    border:1px solid var(--line); border-left:4px solid #ffffff;
+    border-radius:10px; cursor:grab; touch-action:none;
+    transition:background .12s, transform .08s;
+  }
+  .bench-card:hover{ background:rgba(255,255,255,.12); transform:translateX(2px); }
+  .bench-card.pos-GK{ border-left-color:#f2c200; }
+  .bench-card.pos-DEF{ border-left-color:#ffffff; }
+  .bench-card.pos-MID{ border-left-color:var(--red); }
+  .bench-card.pos-FWD{ border-left-color:#7a0a16; }
+  .bench-card.selected{ background:rgba(237,187,0,.16); border-color:var(--gold); }
+  .bench-card.dragging-out{ opacity:.4; }
+  .bench-card .bnum{
+    width:28px; height:28px; border-radius:8px; flex:0 0 auto; font-weight:800; font-size:12.5px;
+    display:flex; align-items:center; justify-content:center; color:#161616; background:#ffffff;
+  }
+  .bench-card.pos-GK .bnum{ background:#f2c200; color:#1a1200; }
+  .bench-card.pos-DEF .bnum{ background:#ffffff; color:#161616; }
+  .bench-card.pos-MID .bnum{ background:var(--red); color:#fff; }
+  .bench-card.pos-FWD .bnum{ background:#7a0a16; color:#fff; }
+  .selhead.team-rival .selnum{ background:#3a3a3a; color:#fff; }
+  .bench-card.team-rival{ border-left-color:#8a8a8a; }
+  .bench-card.team-rival .bnum{ background:#3a3a3a; color:#fff; }
+  .cand.team-rival .cnum{ background:#3a3a3a; color:#fff; }
+  .bench-card .binfo{ flex:1; min-width:0; }
+  .bench-card .bname{ display:block; font-size:12.5px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .bench-card .bpos{ display:block; font-size:10px; color:var(--muted); }
+
+  .rowbtns{ display:flex; flex-wrap:wrap; gap:6px; }
+
+  /* ===================== CAMPO GRANDE ===================== */
+  body.campo-grande .panel{ display:none; }
+  body.campo-grande .pitch{ width:min(100%, calc((100vh - 96px) * var(--ratio))); }
+  #panelBtn.on{ background:rgba(255,255,255,.28); border-color:#fff; }
+
+  /* ===================== ANIMACIONES ===================== */
+  .token .disc{ transition:transform .14s ease; }
+  .token:hover .disc{ transform:scale(1.08); }
+  .token:active .disc{ transform:scale(.94); }
+  @keyframes selpulse{ 0%{ box-shadow:0 0 0 0 rgba(255,210,31,.65); } 100%{ box-shadow:0 0 0 10px rgba(255,210,31,0); } }
+  .token.sel .disc{ animation:selpulse 1.1s ease-out infinite; }
+  @keyframes ballbounce{ 0%,100%{ transform:translate(-50%,-50%) scale(1); } 50%{ transform:translate(-50%,-58%) scale(1.06); } }
+  .ball{ animation:ballbounce 1.6s ease-in-out infinite !important; }
+  @keyframes crestfloat{ 0%,100%{ transform:translateY(0); } 50%{ transform:translateY(-2px); } }
+  .crest{ animation:crestfloat 3.2s ease-in-out infinite; }
+  @keyframes arrowin{ from{ opacity:0; } to{ opacity:1; } }
+  .arrows path, .arrows line, .arrows polygon{ animation:arrowin .3s ease both; }
+  .modebtn{ position:relative; overflow:hidden; }
+  .modebtn::after{ content:""; position:absolute; inset:0; background:radial-gradient(circle at center, rgba(255,255,255,.35), transparent 60%); opacity:0; transition:opacity .25s; }
+  .modebtn:hover::after{ opacity:1; }
+  @keyframes toastin{ from{ transform:translate(-50%,16px); opacity:0; } to{ transform:translate(-50%,0); opacity:1; } }
+  .toast{ position:fixed; left:50%; bottom:26px; transform:translateX(-50%); z-index:200;
+    background:linear-gradient(90deg, var(--red), #7a0a16); color:#fff; font-weight:700; font-size:13px;
+    padding:11px 18px; border-radius:999px; box-shadow:0 12px 30px rgba(0,0,0,.55); border:1px solid rgba(255,255,255,.25);
+    animation:toastin .25s ease both; pointer-events:none; }
+  @keyframes fadein{ from{ opacity:0; } to{ opacity:1; } }
+  .modal{ position:fixed; inset:0; z-index:300; background:rgba(0,0,0,.72); display:flex; align-items:center; justify-content:center; padding:20px; animation:fadein .2s ease both; }
+  .modal .box{ background:var(--panel-2); border:1px solid var(--line); border-radius:16px; max-width:min(92vw,720px); width:100%; box-shadow:var(--shadow); overflow:hidden; }
+  .modal .box h3{ margin:0; padding:13px 16px; font-size:14px; background:linear-gradient(90deg, rgba(211,18,42,.8), rgba(20,10,12,.6)); }
+  .modal .box img{ display:block; width:100%; max-height:56vh; object-fit:contain; background:#0b0708; }
+  .modal .box .foot{ display:flex; gap:10px; justify-content:flex-end; padding:12px 16px; flex-wrap:wrap; }
+  .modal .box .foot p{ flex:1; margin:0; font-size:12px; color:var(--muted); align-self:center; }
+  .modal a.dl, .modal button{ font:inherit; font-size:12.5px; font-weight:700; color:#fff; cursor:pointer; text-decoration:none;
+    background:var(--red); border:1px solid rgba(255,255,255,.3); border-radius:10px; padding:9px 14px; }
+  .modal button{ background:rgba(255,255,255,.12); }
+
+  /* ===================== BARRA DE AVISO ===================== */
+  .hintbar{
+    flex:0 0 auto;
+    margin:8px clamp(10px,2vw,22px) 18px; display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+    font-size:12.5px; color:var(--muted); padding:9px 14px;
+    border:1px dashed rgba(255,255,255,.2); border-radius:12px; background:rgba(255,255,255,.03);
+  }
+  .hintbar b{ color:#fff; }
+
+  /* ===================== RESPONSIVE ===================== */
+  @media (max-width: 980px){
+    :root{ --ts: clamp(30px, 8.4vw, 54px); }
+    body{ height:auto; overflow:auto; display:block; }
+    .board{ flex-direction:column; }
+    .pitch{ width:100%; height:auto; max-height:none; }
+    .panel{ flex:1 1 auto; max-width:none; }
+    .modes{ margin-left:0; order:3; width:100%; }
+    .bench-list{ max-height:none; flex-direction:row; flex-wrap:wrap; }
+    .bench-card{ flex:1 1 46%; }
+    .brand p{ display:none; }
+  }
+</style>
+</head>
+<body>
+
+  <!-- ===================== CABECERA ===================== -->
+  <header class="topbar">
+    <div class="brand">
+      <svg class="crest" viewBox="0 0 40 46" aria-hidden="true">
+        <path d="M20 1 L39 8 V22 C39 34 30 42 20 45 C10 42 1 34 1 22 V8 Z" fill="#ffffff"/>
+        <path d="M20 1 L39 8 V22 C39 34 30 42 20 45 Z" fill="#d3122a"/>
+        <path d="M20 1 L39 8 V22 C39 34 30 42 20 45 C10 42 1 34 1 22 V8 Z" fill="none" stroke="#ffd21f" stroke-width="2"/>
+        <path d="M20 8 L20 38" stroke="#ffd21f" stroke-width="2"/>
+        <circle cx="20" cy="16" r="3.4" fill="#ffd21f"/>
+      </svg>
+      <div>
+        <h1>Pizarra Táctica</h1>
+        <p>Cultural y Deportiva Leonesa · 2026/27</p>
+      </div>
+    </div>
+
+    <div class="modes">
+      <button class="modebtn active" data-mode="move">✋ Mover</button>
+      <button class="modebtn" data-mode="arrow">➜ Flecha</button>
+      <button class="modebtn" data-mode="pass">⤳ Pase</button>
+      <button class="modebtn" data-mode="pen">✏️ Lápiz</button>
+      <button class="modebtn" data-mode="cone">▲ Cono</button>
+      <button class="modebtn" data-mode="ball">⚽ Balón</button>
+      <button class="modebtn" data-mode="erase">🧽 Borrar</button>
+    </div>
+
+    <div class="actions">
+      <label for="formation">Formación
+        <select id="formation">
+          <option value="4-2-3-1">4-2-3-1</option>
+          <option value="4-3-3">4-3-3</option>
+          <option value="3-4-3">3-4-3</option>
+          <option value="4-4-2">4-4-2</option>
+        </select>
+      </label>
+      <button id="namesBtn" class="tog on" type="button">Nombres</button>
+      <button id="ratingsBtn" class="tog on" type="button">Valoraciones</button>
+      <button id="undoBtn" type="button">↶ Deshacer</button>
+      <button id="panelBtn" class="tog" type="button">⛶ Campo grande</button>
+      <button id="resetBtn" type="button">Reiniciar</button>
+      <button id="downloadBtn" type="button">⬇ Guardar web</button>
+    </div>
+  </header>
+
+  <!-- ===================== PIZARRA + PANEL ===================== -->
+  <main class="board">
+    <div class="pitch-wrap">
+      <div class="pitch" id="pitch">
+        <svg class="lines" viewBox="0 0 1050 680" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+          <g fill="none" stroke="rgba(255,255,255,.85)" stroke-width="3">
+            <rect x="25" y="25" width="1000" height="630"/>
+            <line x1="525" y1="25" x2="525" y2="655"/>
+            <circle cx="525" cy="340" r="91.5"/>
+            <rect x="25" y="138.4" width="165" height="403.2"/>
+            <rect x="860" y="138.4" width="165" height="403.2"/>
+            <rect x="25" y="248.4" width="55" height="183.2"/>
+            <rect x="970" y="248.4" width="55" height="183.2"/>
+            <path d="M190 266.88 A91.5 91.5 0 0 1 190 413.12"/>
+            <path d="M860 266.88 A91.5 91.5 0 0 0 860 413.12"/>
+            <path d="M35 25 A10 10 0 0 1 25 35"/>
+            <path d="M1025 35 A10 10 0 0 1 1015 25"/>
+            <path d="M1015 655 A10 10 0 0 1 1025 645"/>
+            <path d="M25 645 A10 10 0 0 1 35 655"/>
+            <rect x="9" y="303.4" width="16" height="73.2"/>
+            <rect x="1025" y="303.4" width="16" height="73.2"/>
+          </g>
+          <g fill="rgba(255,255,255,.9)">
+            <circle cx="525" cy="340" r="6"/>
+            <circle cx="135" cy="340" r="5"/>
+            <circle cx="915" cy="340" r="5"/>
+          </g>
+        </svg>
+
+        <svg class="arrows" id="arrowLayer" viewBox="0 0 1050 680" preserveAspectRatio="xMidYMid meet" aria-hidden="true"></svg>
+
+        <div class="field-layer" id="fieldLayer"></div>
+      </div>
+    </div>
+
+    <aside class="panel">
+      <div class="panel-head">
+        <div class="teamtabs">
+          <button class="teamtabs-btn active" id="tabBarca" type="button">⚪🔴 Cultu</button>
+          <button class="teamtabs-btn" id="tabRival" type="button">⚫ Rival</button>
+        </div>
+      </div>
+      <div class="panel-body">
+
+        <div class="card">
+          <h3>Resumen</h3>
+          <div class="statgrid">
+            <div class="stat gold"><b id="statAvg">--</b><span>Valoración media</span></div>
+            <div class="stat"><b id="statField">11</b><span>En el campo</span></div>
+            <div class="stat"><b id="statBench">16</b><span>Banquillo</span></div>
+            <div class="stat"><b id="statSubs">0</b><span>Cambios</span></div>
+            <div class="stat"><b id="statArrows">0</b><span>Flechas</span></div>
+            <div class="stat"><b id="statCones">0</b><span>Conos</span></div>
+            <div class="stat"><b id="statBalls">0</b><span>Balones</span></div>
+            <div class="stat"><b id="statStrokes">0</b><span>Dibujos</span></div>
+            <div class="stat"><b id="statRival">11</b><span>Rival en campo</span></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Jugador seleccionado</h3>
+          <div id="infoBox"></div>
+        </div>
+
+        <div class="card">
+          <h3>Banquillo</h3>
+          <div class="bench-list" id="benchList"></div>
+        </div>
+
+        <div class="card">
+          <h3>Herramientas</h3>
+          <div class="rowbtns">
+            <button class="minibtn" id="addConeBtn" type="button">▲ Colocar cono</button>
+            <button class="minibtn" id="addBallBtn" type="button">⚽ Colocar balón</button>
+            <button class="minibtn" id="clearArrowsBtn" type="button">🧼 Limpiar dibujos</button>
+            <button class="minibtn" id="clearConesBtn" type="button">Borrar conos</button>
+            <button class="minibtn" id="clearBallsBtn" type="button">Borrar balones</button>
+            <button class="minibtn" id="removeSelBtn" type="button">🗑 Quitar seleccionado</button>
+            <button class="minibtn" id="pngBtn" type="button">💾 Descargar pizarra (PNG)</button>
+            <button class="minibtn" id="saveBtn" type="button">💾 Guardar</button>
+            <button class="minibtn" id="loadBtn" type="button">📂 Cargar</button>
+            <button class="minibtn" id="defaultBtn" type="button">♻ Once inicial</button>
+          </div>
+        </div>
+
+      </div>
+    </aside>
+  </main>
+
+  <div class="hintbar" id="hintbar"></div>
+
+<script>
+/* =========================================================
+   1. PLANTILLA CULTURAL Y DEPORTIVA LEONESA 2026/27  (r = valoración editable)
+   ========================================================= */
+const SQUAD = [
+  { num:1,  name:'Miquel Parera',   pos:'GK',  r:76, s:'Parera' },
+  { num:13, name:'M. San Román',    pos:'GK',  r:72, s:'San Román' },
+  { num:2,  name:'Guzmán Ortega',   pos:'DEF', r:74, s:'Guzmán' },
+  { num:16, name:'Oier López',      pos:'DEF', r:72, s:'Oier' },
+  { num:17, name:'Carlos Pomares',  pos:'DEF', r:75, s:'Pomares' },
+  { num:20, name:'Iago López',      pos:'DEF', r:73, s:'Iago L.' },
+  { num:3,  name:'Jaime Vázquez',   pos:'DEF', r:76, s:'J. Vázquez' },
+  { num:4,  name:'Rodri Suárez',    pos:'DEF', r:78, s:'Rodri S.' },
+  { num:5,  name:'Róber Pier',      pos:'DEF', r:77, s:'Pier' },
+  { num:15, name:'Antxon Jaso',     pos:'DEF', r:72, s:'Jaso' },
+  { num:24, name:'Bogdan Țîru',     pos:'DEF', r:76, s:'Țîru' },
+  { num:6,  name:'Sergi Maestre',   pos:'MID', r:77, s:'Maestre' },
+  { num:8,  name:'Assane Ndiaye',   pos:'MID', r:75, s:'Ndiaye' },
+  { num:14, name:"J. Fdez 'Bicho'", pos:'MID', r:76, s:'Bicho' },
+  { num:21, name:'Jon García',      pos:'MID', r:74, s:'Jon G.' },
+  { num:23, name:'Ángel Algobia',   pos:'MID', r:73, s:'Algobia' },
+  { num:10, name:'Álex Cardero',    pos:'MID', r:78, s:'Cardero' },
+  { num:7,  name:'Pedro Benito',    pos:'FWD', r:79, s:'P. Benito' },
+  { num:9,  name:'Jorge Delgado',   pos:'FWD', r:74, s:'Delgado' },
+  { num:11, name:'Hugo García',     pos:'FWD', r:75, s:'Hugo' },
+  { num:18, name:'João Gabriel',    pos:'FWD', r:73, s:'João G.' },
+  { num:19, name:'Antón Escobar',   pos:'FWD', r:79, s:'Escobar' },
+  { num:22, name:'Dani Queipo',     pos:'FWD', r:77, s:'Queipo' },
+].map(p => ({ ...p, team:'barca', uid:'barca-' + p.num }));
+
+const STARTING = [
+  { num:1,  x:0.055, y:0.50 },  // Parera (portero)
+  { num:2,  x:0.210, y:0.16 },  // Guzmán Ortega (lateral der.)
+  { num:4,  x:0.190, y:0.39 },  // Rodri Suárez (central)
+  { num:5,  x:0.190, y:0.61 },  // Róber Pier (central)
+  { num:17, x:0.210, y:0.84 },  // Carlos Pomares (lateral izq.)
+  { num:6,  x:0.380, y:0.36 },  // Sergi Maestre (pivote)
+  { num:21, x:0.380, y:0.64 },  // Jon García (pivote)
+  { num:10, x:0.560, y:0.50 },  // Álex Cardero (mediapunta)
+  { num:7,  x:0.700, y:0.16 },  // Pedro Benito (extremo der.)
+  { num:19, x:0.740, y:0.50 },  // Antón Escobar (delantero)
+  { num:11, x:0.700, y:0.84 },  // Hugo García (extremo izq.)
+];
+
+const FORMATIONS = {
+  '4-3-3': [
+    [0.055,0.50],[0.210,0.16],[0.190,0.39],[0.190,0.61],[0.210,0.84],
+    [0.400,0.50],[0.450,0.27],[0.450,0.73],[0.700,0.16],[0.740,0.50],[0.700,0.84],
+  ],
+  '4-2-3-1': [
+    [0.055,0.50],[0.210,0.16],[0.190,0.39],[0.190,0.61],[0.210,0.84],
+    [0.380,0.36],[0.380,0.64],[0.580,0.16],[0.560,0.50],[0.580,0.84],[0.760,0.50],
+  ],
+  '3-4-3': [
+    [0.055,0.50],[0.200,0.28],[0.190,0.50],[0.200,0.72],
+    [0.420,0.12],[0.400,0.40],[0.400,0.60],[0.420,0.88],[0.700,0.22],[0.740,0.50],[0.700,0.78],
+  ],
+  '4-4-2': [
+    [0.055,0.50],[0.210,0.16],[0.190,0.39],[0.190,0.61],[0.210,0.84],
+    [0.460,0.14],[0.430,0.40],[0.430,0.60],[0.460,0.86],[0.720,0.38],[0.720,0.62],
+  ],
+};
+
+/* =========================================================
+   PLANTILLA RIVAL (equipo genérico, ataca hacia la izquierda)
+   ========================================================= */
+const RIVAL = [
+  { num:1,  name:'Portero Rival',  pos:'GK',  r:80, s:'Portero' },
+  { num:13, name:'Portero Supl.',  pos:'GK',  r:74, s:'Portero S.' },
+  { num:2,  name:'Lateral Derecho',pos:'DEF', r:78, s:'Lat. Der.' },
+  { num:3,  name:'Lateral Izquierdo',pos:'DEF', r:78, s:'Lat. Izq.' },
+  { num:4,  name:'Central 1',      pos:'DEF', r:81, s:'Central 1' },
+  { num:5,  name:'Central 2',      pos:'DEF', r:81, s:'Central 2' },
+  { num:15, name:'Defensa Supl. 1',pos:'DEF', r:74, s:'Defensa 1' },
+  { num:22, name:'Defensa Supl. 2',pos:'DEF', r:73, s:'Defensa 2' },
+  { num:6,  name:'Pivote',         pos:'MID', r:82, s:'Pivote' },
+  { num:8,  name:'Interior 1',     pos:'MID', r:80, s:'Interior 1' },
+  { num:10, name:'Interior 2',     pos:'MID', r:81, s:'Interior 2' },
+  { num:14, name:'Medio Supl. 1',  pos:'MID', r:75, s:'Medio 1' },
+  { num:16, name:'Medio Supl. 2',  pos:'MID', r:74, s:'Medio 2' },
+  { num:18, name:'Medio Supl. 3',  pos:'MID', r:74, s:'Medio 3' },
+  { num:7,  name:'Extremo Derecho',pos:'FWD', r:83, s:'Ext. Der.' },
+  { num:11, name:'Extremo Izquierdo',pos:'FWD', r:83, s:'Ext. Izq.' },
+  { num:9,  name:'Delantero',      pos:'FWD', r:84, s:'Delantero' },
+  { num:19, name:'Delantero Supl.',pos:'FWD', r:76, s:'Delantero S.' },
+  { num:20, name:'Delantero Supl. 2',pos:'FWD', r:75, s:'Delantero 2' },
+].map(p => ({ ...p, team:'rival', uid:'rival-' + p.num }));
+
+const RIVAL_STARTING = [
+  { num:1,  x:0.945, y:0.50 },  // Portero rival
+  { num:3,  x:0.790, y:0.16 },  // Lateral izquierdo
+  { num:4,  x:0.810, y:0.39 },  // Central 1
+  { num:5,  x:0.810, y:0.61 },  // Central 2
+  { num:2,  x:0.790, y:0.84 },  // Lateral derecho
+  { num:6,  x:0.600, y:0.50 },  // Pivote
+  { num:8,  x:0.550, y:0.27 },  // Interior 1
+  { num:10, x:0.550, y:0.73 },  // Interior 2
+  { num:11, x:0.300, y:0.16 },  // Extremo izquierdo
+  { num:9,  x:0.260, y:0.50 },  // Delantero
+  { num:7,  x:0.300, y:0.84 },  // Extremo derecho
+];
+
+const ROLE_ORDER = { GK:0, DEF:1, MID:2, FWD:3 };
+const NS = 'http://www.w3.org/2000/svg';
+const SVGW = 1050, SVGH = 680;
+const KEY = 'pizarra-cultu-v1';
+
+/* =========================================================
+   2. ESTADO
+   ========================================================= */
+const pitch      = document.getElementById('pitch');
+const fieldLayer = document.getElementById('fieldLayer');
+const arrowLayer = document.getElementById('arrowLayer');
+const benchList  = document.getElementById('benchList');
+const infoBox    = document.getElementById('infoBox');
+const hintbar    = document.getElementById('hintbar');
+
+let players = [];
+let cones = [];
+let balls = [];
+let arrows = [];
+let strokes = [];
+let selected = null;
+let mode = 'move';
+let currentFormation = '4-2-3-1';
+let showNames = true;
+let showRatings = true;
+let subCount = 0;
+let coneSeq = 0;
+let ballSeq = 0;
+let teamFilter = 'barca';   // equipo que se está editando: 'barca' (Cultu) | 'rival'
+let history = [];
+
+const clamp = (v,a,b) => Math.max(a, Math.min(b, v));
+const byUid = n => players.find(p => p.uid === n);
+const shortName = p => p.s || p.name;
+const labelPos = pos => ({GK:'Portero',DEF:'Defensa',MID:'Centrocampista',FWD:'Delantero'})[pos] || pos;
+const ratingTier = r => r >= 86 ? 'high' : (r >= 80 ? 'mid' : 'low');
+const colorPos = pos => ({GK:'#f2c200',DEF:'#ffffff',MID:'#d3122a',FWD:'#7a0a16'})[pos] || '#ffffff';
+
+/* =========================================================
+   3. DATOS / ESTADO INICIAL
+   ========================================================= */
+function defaultSquad(){
+  players = SQUAD.concat(RIVAL).map(base => ({ ...base, place:'bench', x:0.5, y:0.5 }));
+  STARTING.forEach(slot => {
+    const p = byUid('barca-' + slot.num);
+    if(p){ p.place = 'field'; p.x = slot.x; p.y = slot.y; }
+  });
+  RIVAL_STARTING.forEach(slot => {
+    const p = byUid('rival-' + slot.num);
+    if(p){ p.place = 'field'; p.x = slot.x; p.y = slot.y; }
+  });
+  arrows = []; cones = []; balls = []; strokes = []; selected = null; subCount = 0;
+  coneSeq = 0; ballSeq = 0; currentFormation = '4-2-3-1'; teamFilter = 'barca';
+  history = [];
+}
+
+/* =========================================================
+   4. RENDER
+   ========================================================= */
+function renderAll(){ renderField(); renderBench(); renderArrows(); renderStats(); renderInfo(); updateTeamTabs(); }
+
+function renderField(){
+  fieldLayer.innerHTML = '';
+  players.filter(p => p.place === 'field').forEach(p => fieldLayer.appendChild(buildToken(p)));
+  cones.forEach(k => fieldLayer.appendChild(buildCone(k)));
+  balls.forEach(b => fieldLayer.appendChild(buildBall(b)));
+}
+
+function buildToken(p){
+  const el = document.createElement('div');
+  el.className = 'token pos-' + p.pos + ' team-' + p.team + (selected === p && p.place === 'field' ? ' sel' : '');
+  el.dataset.uid = p.uid;
+  el.style.left = (p.x * 100) + '%';
+  el.style.top  = (p.y * 100) + '%';
+  el.innerHTML =
+    '<div class="disc"><span>' + p.num + '</span></div>' +
+    '<div class="name">' + shortName(p) + '</div>' +
+    '<div class="rating r-' + ratingTier(p.r) + '">' + p.r + '</div>';
+  el.addEventListener('pointerdown', onTokenPointerDown);
+  return el;
+}
+
+function buildCone(k){
+  const el = document.createElement('div');
+  el.className = 'cone' + (selected === k ? ' sel' : '');
+  el.dataset.id = k.id;
+  el.style.left = (k.x * 100) + '%';
+  el.style.top  = (k.y * 100) + '%';
+  el.addEventListener('pointerdown', onConePointerDown);
+  return el;
+}
+
+function buildBall(b){
+  const el = document.createElement('div');
+  const isSel = selected && selected.type === 'ball' && selected.id === b.id;
+  el.className = 'ball' + (isSel ? ' sel' : '');
+  el.dataset.id = b.id;
+  el.style.left = (b.x * 100) + '%';
+  el.style.top  = (b.y * 100) + '%';
+  el.textContent = '⚽';
+  el.addEventListener('pointerdown', onBallPointerDown);
+  return el;
+}
+
+function renderBench(){
+  benchList.innerHTML = '';
+  players.filter(p => p.place === 'bench' && p.team === teamFilter).forEach(p => {
+    const el = document.createElement('div');
+    el.className = 'bench-card pos-' + p.pos + ' team-' + p.team + (selected === p ? ' selected' : '');
+    el.dataset.uid = p.uid;
+    el.innerHTML =
+      '<span class="bnum">' + p.num + '</span>' +
+      '<span class="binfo"><span class="bname">' + p.name + '</span>' +
+      '<span class="bpos">' + labelPos(p.pos) + '</span></span>' +
+      '<span class="rating r-' + ratingTier(p.r) + '">' + p.r + '</span>';
+    el.addEventListener('pointerdown', onBenchPointerDown);
+    benchList.appendChild(el);
+  });
+}
+
+/* --- Flechas (dibujo de jugadas) --- */
+function setArrowGeom(g, x1,y1,x2,y2){
+  g._line.setAttribute('x1',x1); g._line.setAttribute('y1',y1);
+  g._line.setAttribute('x2',x2); g._line.setAttribute('y2',y2);
+  g._poly.setAttribute('points', arrowHead(x1,y1,x2,y2));
+}
+function arrowHead(x1,y1,x2,y2){
+  const ang = Math.atan2(y2-y1, x2-x1);
+  const L = Math.min(28, Math.hypot(x2-x1, y2-y1) * 0.45);
+  const a1 = ang + Math.PI - 0.40, a2 = ang + Math.PI + 0.40;
+  return x2+','+y2+' '+(x2+Math.cos(a1)*L)+','+(y2+Math.sin(a1)*L)+' '+(x2+Math.cos(a2)*L)+','+(y2+Math.sin(a2)*L);
+}
+function newArrowG(type){
+  const g = document.createElementNS(NS,'g');
+  const line = document.createElementNS(NS,'line');
+  line.setAttribute('stroke', type==='pass' ? '#ffffff' : '#EDBB00');
+  line.setAttribute('stroke-width', type==='pass' ? '5' : '7');
+  line.setAttribute('stroke-linecap','round');
+  if(type==='pass') line.setAttribute('stroke-dasharray','18 14');
+  g.appendChild(line);
+  const poly = document.createElementNS(NS,'polygon');
+  poly.setAttribute('fill', type==='pass' ? '#ffffff' : '#EDBB00');
+  g.appendChild(poly);
+  g._line = line; g._poly = poly; g._type = type;
+  return g;
+}
+function renderArrows(){
+  arrowLayer.innerHTML = '';
+  arrows.forEach(a => {
+    const g = newArrowG(a.type);
+    setArrowGeom(g, a.x1*SVGW, a.y1*SVGH, a.x2*SVGW, a.y2*SVGH);
+    arrowLayer.appendChild(g);
+  });
+  strokes.forEach(s => arrowLayer.appendChild(buildStroke(s)));
+}
+
+/* --- Dibujo a mano alzada (✏️ Lápiz) --- */
+function strokeD(points){
+  return points.map((pt,i) => (i ? 'L' : 'M') + (pt.x*SVGW).toFixed(1) + ' ' + (pt.y*SVGH).toFixed(1)).join(' ');
+}
+function buildStroke(s){
+  const p = document.createElementNS(NS,'path');
+  p.setAttribute('d', strokeD(s.points));
+  p.setAttribute('fill','none');
+  p.setAttribute('stroke', s.color || '#EDBB00');
+  p.setAttribute('stroke-width', s.width || 6);
+  p.setAttribute('stroke-linecap','round');
+  p.setAttribute('stroke-linejoin','round');
+  return p;
+}
+
+function renderStats(){
+  const field = players.filter(p => p.place === 'field' && p.team === teamFilter);
+  const avg = field.length ? Math.round(field.reduce((s,p)=>s+p.r,0)/field.length) : 0;
+  document.getElementById('statAvg').textContent = avg || '--';
+  document.getElementById('statField').textContent = field.length;
+  document.getElementById('statBench').textContent = players.filter(p=>p.place==='bench' && p.team===teamFilter).length;
+  document.getElementById('statSubs').textContent = subCount;
+  document.getElementById('statArrows').textContent = arrows.length;
+  document.getElementById('statCones').textContent = cones.length;
+  document.getElementById('statBalls').textContent = balls.length;
+  document.getElementById('statStrokes').textContent = strokes.length;
+  document.getElementById('statRival').textContent = players.filter(p=>p.place==='field' && p.team==='rival').length;
+}
+
+function renderInfo(){
+  if(!selected){
+    infoBox.innerHTML = '<p class="muted">Toca un jugador (o arrástralo) para ver su valoración y cambiarlo. También puedes colocar conos y dibujar flechas.</p>';
+    return;
+  }
+  const s = selected;
+  if(s.type === 'cone' || s.type === 'ball'){
+    const nom = s.type === 'cone' ? 'Cono' : 'Balón';
+    infoBox.innerHTML = '<p class="muted">' + nom + ' seleccionado. Arrástralo para moverlo o usa <b>Quitar seleccionado</b> para eliminarlo.</p>';
+    return;
+  }
+  let html =
+    '<div class="selhead pos-' + s.pos + ' team-' + s.team + '">' +
+      '<span class="selnum">' + s.num + '</span>' +
+      '<div class="selmeta"><b>' + s.name + '</b><span>' + labelPos(s.pos) + ' · ' + (s.place==='field'?'En el campo':'En el banquillo') + '</span></div>' +
+      '<span class="rating r-' + ratingTier(s.r) + '">' + s.r + '</span>' +
+    '</div>' +
+    '<label class="ratingEdit">Valoración <input id="ratingInput" type="number" min="1" max="99" value="' + s.r + '"></label>';
+
+  let list = [], title = '';
+  if(s.place === 'field'){
+    title = 'Sustituir por (banquillo) · o intercambiar con un jugador del campo';
+    players.filter(p => p.place === 'bench' && p.team === s.team).forEach(p => list.push({p, kind:'sub'}));
+    players.filter(p => p.place === 'field' && p.team === s.team && p.uid !== s.uid).forEach(p => list.push({p, kind:'swap'}));
+  } else {
+    title = 'Elegir quién sale del campo';
+    players.filter(p => p.place === 'field' && p.team === s.team).forEach(p => list.push({p, kind:'in'}));
+  }
+  html += '<div class="candTitle">' + title + '</div><div class="candlist">';
+  list.forEach(({p, kind}) => {
+    html += '<button class="cand team-' + p.team + '" data-uid="' + p.uid + '" data-kind="' + kind + '">' +
+              '<span class="cnum pos-' + p.pos + '">' + p.num + '</span>' +
+              '<span class="cname">' + p.name + '</span>' +
+              '<span class="rating r-' + ratingTier(p.r) + '">' + p.r + '</span></button>';
+  });
+  html += '</div>';
+  infoBox.innerHTML = html;
+
+  document.getElementById('ratingInput').addEventListener('change', (e) => {
+    let v = parseInt(e.target.value, 10);
+    if(isNaN(v)) v = s.r;
+    s.r = clamp(v, 1, 99);
+    renderBench(); renderField(); renderStats(); renderInfo(); saveState();
+  });
+
+  infoBox.querySelectorAll('.cand').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const p = byUid(btn.dataset.uid);
+      if(!p) return;
+      const kind = btn.dataset.kind;
+      if(kind === 'sub') substitute(s.uid, p.uid);      // s (campo) sale, p (banquillo) entra
+      else if(kind === 'in') substitute(p.uid, s.uid);  // p (campo) sale, s (banquillo) entra
+      else interchange(s.uid, p.uid);                   // ambos en el campo
+    });
+  });
+}
+
+/* =========================================================
+   5. ARRASTRE DE JUGADORES
+   ========================================================= */
+function onTokenPointerDown(e){
+  if(mode !== 'move') return;
+  if(e.button !== undefined && e.button !== 0) return;
+  e.preventDefault();
+
+  const el = e.currentTarget;
+  const p = byUid(el.dataset.uid);
+  if(!p) return;
+
+  const rect = pitch.getBoundingClientRect();
+  const offX = e.clientX - (rect.left + p.x * rect.width);
+  const offY = e.clientY - (rect.top  + p.y * rect.height);
+  el.setPointerCapture(e.pointerId);
+  el.classList.add('dragging');
+
+  let moved = false;
+  const sx = e.clientX, sy = e.clientY;
+
+  const onMove = (ev) => {
+    if(!moved && (Math.abs(ev.clientX-sx) > 4 || Math.abs(ev.clientY-sy) > 4)){ moved = true; pushHistory(); }
+    const nx = clamp((ev.clientX-rect.left-offX)/rect.width,  0.035, 0.965);
+    const ny = clamp((ev.clientY-rect.top -offY)/rect.height, 0.050, 0.950);
+    p.x = nx; p.y = ny;
+    el.style.left = (nx*100)+'%'; el.style.top = (ny*100)+'%';
+  };
+  const onEnd = () => {
+    el.removeEventListener('pointermove', onMove);
+    el.removeEventListener('pointerup', onEnd);
+    el.removeEventListener('pointercancel', onEnd);
+    try { el.releasePointerCapture(e.pointerId); } catch(_){}
+    el.classList.remove('dragging');
+    if(moved){ saveState(); }
+    else { handleTap(p); }
+  };
+  el.addEventListener('pointermove', onMove);
+  el.addEventListener('pointerup', onEnd);
+  el.addEventListener('pointercancel', onEnd);
+}
+
+function onBenchPointerDown(e){
+  if(e.button !== undefined && e.button !== 0) return;
+  e.preventDefault();
+  if(mode !== 'move' && mode !== 'arrow' && mode !== 'pass'){ /* permite cambiar desde cualquier modo no-borrado */ }
+
+  const el = e.currentTarget;
+  const p = byUid(el.dataset.uid);
+  if(!p) return;
+
+  const sx = e.clientX, sy = e.clientY;
+  let moved = false, ghost = null, target = null;
+  el.setPointerCapture(e.pointerId);
+
+  const onMove = (ev) => {
+    if(!moved && (Math.abs(ev.clientX-sx) > 6 || Math.abs(ev.clientY-sy) > 6)){
+      moved = true;
+      ghost = buildToken(p); ghost.classList.add('ghost');
+      ghost.style.left = sx+'px'; ghost.style.top = sy+'px';
+      document.body.appendChild(ghost);
+      el.classList.add('dragging-out');
+    }
+    if(!moved) return;
+    ghost.style.left = ev.clientX+'px';
+    ghost.style.top  = ev.clientY+'px';
+    const under = document.elementFromPoint(ev.clientX, ev.clientY);
+    const ft = under && under.closest ? under.closest('.token') : null;
+    const ftField = (ft && ft.parentElement === fieldLayer) ? ft : null;
+    if(target && target !== ftField) target.classList.remove('swap-target');
+    target = ftField;
+    if(target) target.classList.add('swap-target');
+  };
+  const onEnd = () => {
+    el.removeEventListener('pointermove', onMove);
+    el.removeEventListener('pointerup', onEnd);
+    el.removeEventListener('pointercancel', onEnd);
+    try { el.releasePointerCapture(e.pointerId); } catch(_){}
+    if(ghost) ghost.remove();
+    if(target) target.classList.remove('swap-target');
+    el.classList.remove('dragging-out');
+    if(moved && target){ substitute(target.dataset.uid, p.uid); }
+    else if(!moved){ handleTap(p); }
+  };
+  el.addEventListener('pointermove', onMove);
+  el.addEventListener('pointerup', onEnd);
+  el.addEventListener('pointercancel', onEnd);
+}
+
+/* Tocar un jugador: selecciona o hace un cambio rápido */
+function handleTap(p){
+  // Solo se cambia/intercambia dentro del mismo equipo
+  if(selected && selected !== p && selected.type !== 'cone' && selected.place !== p.place && selected.team === p.team){
+    if(selected.place === 'bench' && p.place === 'field') substitute(p.uid, selected.uid);
+    else if(selected.place === 'field' && p.place === 'bench') substitute(selected.uid, p.uid);
+    return;
+  }
+  // Al tocar un jugador, la pestaña salta a su equipo
+  if(p.team !== teamFilter) selectTeam(p.team, true);
+  selected = (selected === p) ? null : p;
+  renderField(); renderBench(); renderStats(); renderInfo();
+}
+
+/* =========================================================
+   6. CONOS
+   ========================================================= */
+function onConePointerDown(e){
+  if(mode !== 'move') return;
+  e.preventDefault();
+  const el = e.currentTarget;
+  const k = cones.find(c => c.id === el.dataset.id);
+  if(!k) return;
+  pushHistory();
+  selected = { type:'cone', id:k.id };
+  renderInfo();
+  const rect = pitch.getBoundingClientRect();
+  const offX = e.clientX - (rect.left + k.x * rect.width);
+  const offY = e.clientY - (rect.top  + k.y * rect.height);
+  el.setPointerCapture(e.pointerId);
+  const onMove = (ev) => {
+    const nx = clamp((ev.clientX-rect.left-offX)/rect.width, 0.02, 0.98);
+    const ny = clamp((ev.clientY-rect.top -offY)/rect.height, 0.03, 0.97);
+    k.x = nx; k.y = ny;
+    el.style.left = (nx*100)+'%'; el.style.top = (ny*100)+'%';
+  };
+  const onEnd = () => {
+    el.removeEventListener('pointermove', onMove);
+    el.removeEventListener('pointerup', onEnd);
+    el.removeEventListener('pointercancel', onEnd);
+    try { el.releasePointerCapture(e.pointerId); } catch(_){}
+    saveState();
+  };
+  el.addEventListener('pointermove', onMove);
+  el.addEventListener('pointerup', onEnd);
+  el.addEventListener('pointercancel', onEnd);
+}
+function addCone(x,y){ cones.push({ id:'c'+(++coneSeq), x, y }); renderField(); renderStats(); saveState(); }
+
+function onBallPointerDown(e){
+  if(mode !== 'move') return;
+  e.preventDefault();
+  const el = e.currentTarget;
+  const b = balls.find(x => x.id === el.dataset.id);
+  if(!b) return;
+  pushHistory();
+  selected = { type:'ball', id:b.id };
+  renderInfo();
+  const rect = pitch.getBoundingClientRect();
+  const offX = e.clientX - (rect.left + b.x * rect.width);
+  const offY = e.clientY - (rect.top  + b.y * rect.height);
+  el.setPointerCapture(e.pointerId);
+  const onMove = (ev) => {
+    const nx = clamp((ev.clientX-rect.left-offX)/rect.width, 0.02, 0.98);
+    const ny = clamp((ev.clientY-rect.top -offY)/rect.height, 0.03, 0.97);
+    b.x = nx; b.y = ny;
+    el.style.left = (nx*100)+'%'; el.style.top = (ny*100)+'%';
+  };
+  const onEnd = () => {
+    el.removeEventListener('pointermove', onMove);
+    el.removeEventListener('pointerup', onEnd);
+    el.removeEventListener('pointercancel', onEnd);
+    try { el.releasePointerCapture(e.pointerId); } catch(_){}
+    saveState();
+  };
+  el.addEventListener('pointermove', onMove);
+  el.addEventListener('pointerup', onEnd);
+  el.addEventListener('pointercancel', onEnd);
+}
+function addBall(x,y){ balls.push({ id:'b'+(++ballSeq), x, y }); renderField(); renderStats(); saveState(); }
+
+/* =========================================================
+   7. INTERACCIÓN SOBRE EL CAMPO (flechas / pases / conos / borrar)
+   ========================================================= */
+function toFrac(cx, cy){
+  const r = pitch.getBoundingClientRect();
+  return { x:(cx-r.left)/r.width, y:(cy-r.top)/r.height };
+}
+pitch.addEventListener('pointerdown', (e) => {
+  if(mode === 'move') return;
+  if(mode === 'cone' || mode === 'ball' || mode === 'arrow' || mode === 'pass' || mode === 'pen') pushHistory();
+
+  if(mode === 'cone' || mode === 'ball'){
+    const f = toFrac(e.clientX, e.clientY);
+    if(f.x > 0 && f.x < 1 && f.y > 0 && f.y < 1){ if(mode === 'cone') addCone(f.x, f.y); else addBall(f.x, f.y); }
+    return;
+  }
+  if(mode === 'erase'){
+    eraseAt(toFrac(e.clientX, e.clientY));
+    return;
+  }
+  if(mode === 'pen'){
+    e.preventDefault();
+    const start = toFrac(e.clientX, e.clientY);
+    const pts = [start];
+    const path = buildStroke({ points: pts });
+    arrowLayer.appendChild(path);
+    try { pitch.setPointerCapture(e.pointerId); } catch(_){}
+    const onMove = (ev) => {
+      pts.push(toFrac(ev.clientX, ev.clientY));
+      path.setAttribute('d', strokeD(pts));
+    };
+    const onUp = () => {
+      pitch.removeEventListener('pointermove', onMove);
+      pitch.removeEventListener('pointerup', onUp);
+      pitch.removeEventListener('pointercancel', onUp);
+      try { pitch.releasePointerCapture(e.pointerId); } catch(_){}
+      if(path.parentNode) arrowLayer.removeChild(path);
+      if(pts.length > 1){ strokes.push({ points: pts }); }
+      renderArrows(); renderStats(); saveState();
+    };
+    pitch.addEventListener('pointermove', onMove);
+    pitch.addEventListener('pointerup', onUp);
+    pitch.addEventListener('pointercancel', onUp);
+    return;
+  }
+  if(mode === 'arrow' || mode === 'pass'){
+    e.preventDefault();
+    const start = toFrac(e.clientX, e.clientY);
+    let end = { ...start };
+    const g = newArrowG(mode);
+    setArrowGeom(g, start.x*SVGW, start.y*SVGH, end.x*SVGW, end.y*SVGH);
+    arrowLayer.appendChild(g);
+    try { pitch.setPointerCapture(e.pointerId); } catch(_){}
+    const onMove = (ev) => {
+      end = toFrac(ev.clientX, ev.clientY);
+      setArrowGeom(g, start.x*SVGW, start.y*SVGH, end.x*SVGW, end.y*SVGH);
+    };
+    const onUp = () => {
+      pitch.removeEventListener('pointermove', onMove);
+      pitch.removeEventListener('pointerup', onUp);
+      pitch.removeEventListener('pointercancel', onUp);
+      try { pitch.releasePointerCapture(e.pointerId); } catch(_){}
+      arrowLayer.removeChild(g);
+      if(Math.hypot(end.x-start.x, end.y-start.y) > 0.02){
+        arrows.push({ x1:start.x, y1:start.y, x2:end.x, y2:end.y, type:mode });
+      }
+      renderArrows(); renderStats(); saveState();
+    };
+    pitch.addEventListener('pointermove', onMove);
+    pitch.addEventListener('pointerup', onUp);
+    pitch.addEventListener('pointercancel', onUp);
+  }
+});
+
+function distToSeg(px,py, x1,y1, x2,y2){
+  const dx = x2-x1, dy = y2-y1;
+  const len2 = dx*dx + dy*dy || 1e-9;
+  let t = ((px-x1)*dx + (py-y1)*dy) / len2;
+  t = clamp(t, 0, 1);
+  return Math.hypot(px - (x1+t*dx), py - (y1+t*dy));
+}
+function eraseAt(f){
+  let ci = -1, cb = 0.045;
+  cones.forEach((k,i) => { const d = Math.hypot(k.x-f.x, k.y-f.y); if(d < cb){ cb = d; ci = i; } });
+  if(ci >= 0){ cones.splice(ci,1); selected = null; renderField(); renderStats(); saveState(); return; }
+  let bi = -1, bb = 0.045;
+  balls.forEach((k,i) => { const d = Math.hypot(k.x-f.x, k.y-f.y); if(d < bb){ bb = d; bi = i; } });
+  if(bi >= 0){ balls.splice(bi,1); renderField(); renderStats(); saveState(); return; }
+  let ai = -1, ab = 0.05;
+  arrows.forEach((a,i) => { const d = distToSeg(f.x,f.y, a.x1,a.y1, a.x2,a.y2); if(d < ab){ ab = d; ai = i; } });
+  if(ai >= 0){ arrows.splice(ai,1); renderArrows(); renderStats(); saveState(); }
+}
+
+/* =========================================================
+   8. CAMBIOS
+   ========================================================= */
+function substitute(fieldUid, benchUid){
+  const fp = byUid(fieldUid), bp = byUid(benchUid);
+  if(!fp || !bp || fp.team !== bp.team) return;
+  if(fp.place !== 'field' || bp.place !== 'bench') return;
+  pushHistory();
+  bp.x = fp.x; bp.y = fp.y;
+  bp.place = 'field'; fp.place = 'bench';
+  subCount++;
+  selected = null;
+  renderAll(); saveState();
+}
+function interchange(aUid, bUid){
+  const a = byUid(aUid), b = byUid(bUid);
+  if(!a || !b || a.team !== b.team || a.place !== 'field' || b.place !== 'field') return;
+  pushHistory();
+  const t = { x:a.x, y:a.y };
+  a.x = b.x; a.y = b.y; b.x = t.x; b.y = t.y;
+  selected = null;
+  renderAll(); saveState();
+}
+
+/* =========================================================
+   8b. DESHACER (historial de estados)
+   ========================================================= */
+function snapshotState(){
+  return JSON.stringify({
+    players: players.map(p => ({ uid:p.uid, place:p.place, x:p.x, y:p.y, r:p.r })),
+    arrows, cones, balls, strokes, currentFormation, subCount
+  });
+}
+function pushHistory(){
+  try{
+    const s = snapshotState();
+    if(history.length && history[history.length-1] === s) return;
+    history.push(s);
+    if(history.length > 60) history.shift();
+  }catch(_){}
+}
+function applyState(raw){
+  const d = JSON.parse(raw);
+  players = SQUAD.concat(RIVAL).map(base => ({ ...base, place:'bench', x:0.5, y:0.5 }));
+  (d.players || []).forEach(sp => {
+    const p = byUid(sp.uid);
+    if(p){ p.place = sp.place || 'bench'; p.x = sp.x; p.y = sp.y; if(typeof sp.r === 'number') p.r = sp.r; }
+  });
+  arrows = d.arrows || [];
+  cones  = d.cones  || [];
+  balls  = d.balls  || [];
+  strokes = d.strokes || [];
+  currentFormation = d.currentFormation || '4-2-3-1';
+  subCount = d.subCount || 0;
+  selected = null;
+}
+function undo(){
+  if(!history.length){ toast('↶ No hay más cambios que deshacer'); return; }
+  applyState(history.pop());
+  document.getElementById('formation').value = currentFormation;
+  renderAll();
+  saveState();
+  toast('↶ Deshecho');
+}
+document.getElementById('undoBtn').addEventListener('click', undo);
+
+/* =========================================================
+   9. MODOS / FORMACIÓN / TOGGLES
+   ========================================================= */
+const HINTS = {
+  move:  '✋ <b>Mover:</b> arrastra jugadores, conos y balones. Toca un jugador para ver su valoración y cambiarlo. Usa las pestañas <b>Cultu/Rival</b> para elegir equipo.',
+  arrow: '➜ <b>Flecha:</b> arrastra sobre el campo para dibujar una flecha de movimiento.',
+  pass:  '⤳ <b>Pase:</b> arrastra para dibujar una línea de pase (discontinua).',
+  pen:   '✏️ <b>Lápiz:</b> mantén pulsado y dibuja a mano alzada sobre el campo.',
+  cone:  '▲ <b>Cono:</b> toca el campo para colocar un cono de entrenamiento.',
+  ball:  '⚽ <b>Balón:</b> toca el campo para colocar un balón.',
+  erase: '🧽 <b>Borrar:</b> toca una flecha, un cono o un balón para eliminarlo.'
+};
+function setMode(m){
+  mode = m;
+  document.querySelectorAll('.modebtn').forEach(b => b.classList.toggle('active', b.dataset.mode === m));
+  pitch.classList.toggle('mode-draw', m === 'arrow' || m === 'pass' || m === 'pen');
+  pitch.classList.toggle('mode-cone', m === 'cone' || m === 'ball');
+  pitch.classList.toggle('mode-erase', m === 'erase');
+  hintbar.innerHTML = HINTS[m] || '';
+}
+document.querySelectorAll('.modebtn').forEach(b => b.addEventListener('click', () => setMode(b.dataset.mode)));
+
+/* --- Pestañas Barça / Rival --- */
+function updateTeamTabs(){
+  const b = document.getElementById('tabBarca'), r = document.getElementById('tabRival');
+  b.classList.toggle('active', teamFilter === 'barca');
+  b.classList.toggle('rival', false);
+  r.classList.toggle('active', teamFilter === 'rival');
+  r.classList.toggle('rival', teamFilter === 'rival');
+}
+function selectTeam(team, keepSelection){
+  teamFilter = team;
+  updateTeamTabs();
+  if(!keepSelection) selected = null;
+  renderBench(); renderStats(); renderInfo(); saveState();
+}
+document.getElementById('tabBarca').addEventListener('click', () => selectTeam('barca'));
+document.getElementById('tabRival').addEventListener('click', () => selectTeam('rival'));
+
+document.getElementById('formation').addEventListener('change', (e) => {
+  pushHistory();
+  currentFormation = e.target.value;
+  const coords = FORMATIONS[currentFormation];
+  const field = players.filter(p => p.place === 'field' && p.team === teamFilter)
+    .sort((a,b) => (ROLE_ORDER[a.pos]-ROLE_ORDER[b.pos]) || (a.num-b.num));
+  field.forEach((p,i) => {
+    const c = coords[i] || coords[coords.length-1];
+    p.x = (p.team === 'rival') ? (1 - c[0]) : c[0];  // el rival ataca hacia la izquierda
+    p.y = c[1];
+  });
+  selected = null; renderField(); renderInfo(); saveState();
+});
+
+document.getElementById('namesBtn').addEventListener('click', (e) => {
+  showNames = !showNames;
+  document.body.classList.toggle('hide-names', !showNames);
+  e.currentTarget.classList.toggle('on', showNames);
+  saveState();
+});
+document.getElementById('ratingsBtn').addEventListener('click', (e) => {
+  showRatings = !showRatings;
+  document.body.classList.toggle('hide-ratings', !showRatings);
+  e.currentTarget.classList.toggle('on', showRatings);
+  saveState();
+});
+document.getElementById('panelBtn').addEventListener('click', (e) => {
+  const on = document.body.classList.toggle('campo-grande');
+  e.currentTarget.classList.toggle('on', on);
+  ajustarPitch();
+  setTimeout(ajustarPitch, 400);
+  toast(on ? '⛶ Campo grande' : '⛶ Panel visible');
+});
+
+/* =========================================================
+   10. HERRAMIENTAS
+   ========================================================= */
+document.getElementById('addConeBtn').addEventListener('click', () => setMode('cone'));
+document.getElementById('addBallBtn').addEventListener('click', () => setMode('ball'));
+document.getElementById('clearArrowsBtn').addEventListener('click', () => { pushHistory(); arrows = []; strokes = []; renderArrows(); renderStats(); saveState(); toast('🧼 Dibujos borrados'); });
+document.getElementById('clearConesBtn').addEventListener('click', () => { pushHistory(); cones = []; selected = null; renderField(); renderStats(); saveState(); toast('Conos borrados'); });
+document.getElementById('clearBallsBtn').addEventListener('click', () => { pushHistory(); balls = []; renderField(); renderStats(); saveState(); toast('Balones borrados'); });
+document.getElementById('removeSelBtn').addEventListener('click', removeSelected);
+
+/* Quitar el elemento seleccionado (cono o balón); los jugadores no se borran */
+function removeSelected(){
+  if(!selected){ hintbar.innerHTML = '🗑 Toca antes un cono o un balón para poder quitarlo.'; setTimeout(()=>setMode(mode),1400); return; }
+  pushHistory();
+  if(selected.type === 'cone'){
+    const i = cones.findIndex(c => c.id === selected.id);
+    if(i >= 0) cones.splice(i,1);
+  } else if(selected.type === 'ball'){
+    const i = balls.findIndex(b => b.id === selected.id);
+    if(i >= 0) balls.splice(i,1);
+  } else {
+    hintbar.innerHTML = '🗑 Los jugadores no se borran (siempre hay 11 por equipo).'; setTimeout(()=>setMode(mode),1600); return;
+  }
+  selected = null; renderField(); renderStats(); saveState();
+}
+document.getElementById('defaultBtn').addEventListener('click', () => {
+  defaultSquad();
+  document.getElementById('formation').value = '4-2-3-1';
+  renderAll(); saveState();
+});
+document.getElementById('resetBtn').addEventListener('click', () => {
+  if(!confirm('¿Reiniciar la pizarra? Se borrarán los cambios, flechas, conos y balones.')) return;
+  defaultSquad();
+  document.getElementById('formation').value = '4-2-3-1';
+  renderAll(); saveState();
+});
+
+/* --- Guardar / Cargar (localStorage) --- */
+function saveState(){
+  try{
+    localStorage.setItem(KEY, JSON.stringify({
+      players: players.map(p => ({ uid:p.uid, place:p.place, x:p.x, y:p.y, r:p.r })),
+      arrows, cones, balls, strokes, currentFormation, showNames, showRatings, subCount, teamFilter
+    }));
+  }catch(_){}
+}
+function loadState(){
+  try{
+    const raw = localStorage.getItem(KEY);
+    if(!raw) return false;
+    const d = JSON.parse(raw);
+    players = SQUAD.concat(RIVAL).map(base => ({ ...base, place:'bench', x:0.5, y:0.5 }));
+    (d.players||[]).forEach(sp => {
+      const p = byUid(sp.uid || ('barca-' + sp.num));
+      if(p){ p.place = sp.place||'bench'; p.x = sp.x; p.y = sp.y; if(typeof sp.r === 'number') p.r = sp.r; }
+    });
+    arrows = d.arrows || [];
+    cones = (d.cones || []).map((k,i) => ({ id:k.id || ('c'+i), x:k.x, y:k.y }));
+    coneSeq = cones.length;
+    balls = (d.balls || []).map((k,i) => ({ id:k.id || ('b'+i), x:k.x, y:k.y }));
+    ballSeq = balls.length;
+    strokes = (d.strokes || []).map(s => ({ points: s.points || [], color: s.color, width: s.width }));
+    currentFormation = d.currentFormation || '4-2-3-1';
+    showNames = d.showNames !== false;
+    showRatings = d.showRatings !== false;
+    subCount = d.subCount || 0;
+    teamFilter = d.teamFilter || 'barca';
+    return true;
+  }catch(_){ return false; }
+}
+document.getElementById('saveBtn').addEventListener('click', () => {
+  saveState();
+  hintbar.innerHTML = '💾 Partida guardada en este navegador.';
+  setTimeout(() => setMode(mode), 1400);
+});
+document.getElementById('loadBtn').addEventListener('click', () => {
+  if(loadState()){ boot(true); hintbar.innerHTML = '📂 Partida cargada.'; setTimeout(()=>setMode(mode),1400); }
+  else { hintbar.innerHTML = '📂 No hay ninguna partida guardada.'; setTimeout(()=>setMode(mode),1600); }
+});
+
+/* --- Descargar el juego (archivo .html autónomo) --- */
+document.getElementById('downloadBtn').addEventListener('click', downloadGame);
+function downloadGame(){
+  const clone = document.documentElement.cloneNode(true);
+  ['#fieldLayer','#benchList','#arrowLayer','#infoBox','.modal','.toast'].forEach(sel => {
+    const el = clone.querySelector(sel); if(el) el.remove ? el.remove() : (el.innerHTML = '');
+  });
+  const b = clone.querySelector('body'); if(b) b.className = '';
+  const p = clone.querySelector('#pitch'); if(p){ p.setAttribute('class','pitch'); p.removeAttribute('style'); }
+  const html = '<!DOCTYPE html>\n' + clone.outerHTML;
+  const blob = new Blob([html], { type:'text/html;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'pizarra-tactica-cultu.html';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2500);
+  hintbar.innerHTML = '⬇ Juego descargado. Ábrelo con doble clic cuando quieras.';
+  toast('⬇ Web guardada como pizarra-tactica-cultu.html');
+  setTimeout(() => setMode(mode), 2200);
+}
+
+/* --- Exportar imagen PNG --- */
+document.getElementById('pngBtn').addEventListener('click', exportPNG);
+function svgToImage(svgEl){
+  return new Promise((res, rej) => {
+    const c = svgEl.cloneNode(true);
+    c.setAttribute('xmlns', NS);
+    c.setAttribute('width', SVGW); c.setAttribute('height', SVGH);
+    const s = new XMLSerializer().serializeToString(c);
+    const img = new Image();
+    img.onload = () => res(img);
+    img.onerror = rej;
+    img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(s);
+  });
+}
+async function exportPNG(){
+  try{
+    const W = 1680, H = Math.round(W * SVGH / SVGW); // 1088
+    const canvas = document.createElement('canvas');
+    canvas.width = W; canvas.height = H;
+    const ctx = canvas.getContext('2d');
+    // césped
+    const n = 13;
+    for(let i=0;i<n;i++){ ctx.fillStyle = i%2 ? '#2a6f2f' : '#2f7d34'; ctx.fillRect(Math.floor(i*W/n),0,Math.ceil(W/n)+1,H); }
+    // líneas
+    try { ctx.drawImage(await svgToImage(document.querySelector('.pitch svg.lines')), 0, 0, W, H); } catch(_){}
+    // flechas
+    if(arrows.length || strokes.length){ try { ctx.drawImage(await svgToImage(arrowLayer), 0, 0, W, H); } catch(_){} }
+
+    const sample = document.querySelector('.token');
+    const tsScreen = sample ? sample.offsetWidth : 42;
+    const scale = W / pitch.clientWidth;
+    const diam = tsScreen * scale;
+    const rad = diam / 2;
+
+    // conos
+    cones.forEach(k => {
+      const cx = k.x*W, cy = k.y*H;
+      const h = diam*0.62, w = diam*0.5;
+      ctx.beginPath();
+      ctx.moveTo(cx, cy - h);
+      ctx.lineTo(cx - w/2, cy);
+      ctx.lineTo(cx + w/2, cy);
+      ctx.closePath();
+      ctx.fillStyle = '#ff7a1a'; ctx.fill();
+      ctx.fillStyle = '#c94f00'; ctx.fillRect(cx - w*0.6, cy, w*1.2, Math.max(3,h*0.16));
+    });
+    // balones
+    balls.forEach(b => {
+      const cx = b.x*W, cy = b.y*H, br = diam*0.30;
+      ctx.beginPath(); ctx.arc(cx, cy, br, 0, Math.PI*2);
+      ctx.fillStyle = '#ffffff'; ctx.fill();
+      ctx.lineWidth = Math.max(2, br*0.14); ctx.strokeStyle = '#10151c'; ctx.stroke();
+      ctx.beginPath();
+      for(let i=0;i<5;i++){
+        const a = -Math.PI/2 + i*2*Math.PI/5;
+        const px = cx + Math.cos(a)*br*0.42, py = cy + Math.sin(a)*br*0.42;
+        if(i) ctx.lineTo(px,py); else ctx.moveTo(px,py);
+      }
+      ctx.closePath(); ctx.fillStyle = '#10151c'; ctx.fill();
+    });
+    // jugadores
+    players.filter(p => p.place === 'field').forEach(p => {
+      const cx = p.x*W, cy = p.y*H;
+      const isRival = p.team === 'rival';
+      const light = !isRival && (p.pos === 'DEF' || p.pos === 'GK');
+      ctx.beginPath(); ctx.arc(cx, cy, rad, 0, Math.PI*2);
+      ctx.fillStyle = isRival ? '#3a3a3a' : colorPos(p.pos); ctx.fill();
+      ctx.lineWidth = Math.max(2, diameterStroke(rad));
+      ctx.strokeStyle = isRival ? '#fff' : (light ? '#d3122a' : '#fff'); ctx.stroke();
+      ctx.fillStyle = light ? '#161616' : '#fff'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.font = '900 ' + Math.round(rad*0.95) + 'px "Segoe UI", Arial, sans-serif';
+      ctx.fillText(String(p.num), cx, cy + rad*0.05);
+      if(showRatings){
+        const rr = rad*0.52;
+        ctx.beginPath(); ctx.arc(cx + rad*0.78, cy - rad*0.78, rr, 0, Math.PI*2);
+        ctx.fillStyle = '#ffd21f'; ctx.fill();
+        ctx.lineWidth = Math.max(2, rr*0.16); ctx.strokeStyle = '#0a1622'; ctx.stroke();
+        ctx.fillStyle = '#1a1200';
+        ctx.font = '900 ' + Math.round(rr*1.05) + 'px "Segoe UI", Arial, sans-serif';
+        ctx.fillText(String(p.r), cx + rad*0.78, cy - rad*0.78 + rr*0.06);
+      }
+      if(showNames){
+        const label = shortName(p);
+        ctx.font = '700 ' + Math.round(rad*0.5) + 'px "Segoe UI", Arial, sans-serif';
+        const tw = ctx.measureText(label).width;
+        const padX = rad*0.28, boxH = rad*0.62, boxY = cy + rad + rad*0.12;
+        ctx.fillStyle = 'rgba(3,10,18,.78)';
+        roundRect(ctx, cx - tw/2 - padX, boxY, tw + padX*2, boxH, boxH/2); ctx.fill();
+        ctx.fillStyle = '#fff'; ctx.textBaseline = 'middle';
+        ctx.fillText(label, cx, boxY + boxH/2 + 1);
+      }
+    });
+
+    const filename = 'pizarra-cultural-leonesa.png';
+    let blob = null;
+    try { blob = await new Promise(res => canvas.toBlob(res, 'image/png')); } catch(_){}
+    const url = blob ? URL.createObjectURL(blob) : canvas.toDataURL('image/png');
+
+    // 1) Intento de descarga directa
+    let ok = false;
+    try{
+      const a = document.createElement('a');
+      a.href = url; a.download = filename;
+      document.body.appendChild(a); a.click(); a.remove();
+      ok = true;
+    }catch(_){}
+
+    // 2) Ventana con la imagen, para que SIEMPRE se pueda guardar
+    showImageModal(url, filename);
+    toast(ok ? '💾 Pizarra lista para guardar' : '💾 Guarda la imagen con clic derecho');
+    if(blob) setTimeout(() => { try { URL.revokeObjectURL(url); } catch(_){} }, 60000);
+  }catch(err){
+    toast('😕 No se pudo generar la imagen en este navegador');
+  }
+}
+
+/* --- Aviso flotante --- */
+let toastTimer = null;
+function toast(msg){
+  let el = document.querySelector('.toast');
+  if(!el){ el = document.createElement('div'); el.className = 'toast'; document.body.appendChild(el); }
+  el.innerHTML = msg;
+  el.style.animation = 'none'; void el.offsetWidth; el.style.animation = '';
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { el.remove(); }, 2800);
+}
+
+/* --- Ventana de imagen (garantiza poder guardar) --- */
+function showImageModal(url, filename){
+  closeImageModal();
+  const wrap = document.createElement('div');
+  wrap.className = 'modal'; wrap.id = 'imgModal';
+  wrap.innerHTML =
+    '<div class="box">' +
+      '<h3>💾 Tu pizarra táctica está lista</h3>' +
+      '<img alt="Pizarra táctica de la Cultural Leonesa">' +
+      '<div class="foot">' +
+        '<p>Si no se descargó sola: pulsa el botón, o clic derecho / mantén pulsada la imagen y elige <b>“Guardar imagen como…”</b>.</p>' +
+        '<a class="dl" download="' + filename + '" href="' + url + '">⬇ Descargar PNG</a>' +
+        '<button type="button">Cerrar</button>' +
+      '</div>' +
+    '</div>';
+  wrap.querySelector('img').src = url;
+  wrap.querySelector('button').addEventListener('click', closeImageModal);
+  wrap.addEventListener('click', (e) => { if(e.target === wrap) closeImageModal(); });
+  document.body.appendChild(wrap);
+}
+function closeImageModal(){
+  const m = document.getElementById('imgModal');
+  if(m) m.remove();
+}
+function diameterStroke(r){ return Math.max(2, r*0.14); }
+function roundRect(ctx,x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);
+  ctx.arcTo(x+w,y,x+w,y+h,r);
+  ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r);
+  ctx.arcTo(x,y,x+w,y,r);
+  ctx.closePath();
+}
+
+/* =========================================================
+   11. TAMAÑO DEL CAMPO (para que se vea SIEMPRE completo)
+   ========================================================= */
+function ajustarPitch(){
+  const wrap  = document.querySelector('.pitch-wrap');
+  const pitch = document.getElementById('pitch');
+  if(!wrap || !pitch) return;
+  if(window.innerWidth <= 980){            // móvil: ancho 100% y scroll
+    pitch.style.width = ''; pitch.style.height = '';
+    return;
+  }
+  const ratio = 105 / 68;
+  const aw = wrap.clientWidth  - 2;        // menos el borde
+  const ah = wrap.clientHeight - 2;
+  if(aw < 80 || ah < 80) return;
+  let w = aw, h = w / ratio;               // intento: llenar el ancho
+  if(h > ah){ h = ah; w = h * ratio; }     // si no cabe de alto, mando por el alto
+  pitch.style.width  = Math.floor(w) + 'px';
+  pitch.style.height = Math.floor(h) + 'px';
+}
+window.addEventListener('resize', ajustarPitch);
+window.addEventListener('load', ajustarPitch);
+document.addEventListener('visibilitychange', ajustarPitch);
+
+/* =========================================================
+   12. ARRANQUE
+   ========================================================= */
+function boot(skipLoad){
+  if(!skipLoad){
+    if(!loadState()) defaultSquad();
+  }
+  document.getElementById('formation').value = currentFormation;
+  document.body.classList.toggle('hide-names', !showNames);
+  document.body.classList.toggle('hide-ratings', !showRatings);
+  document.getElementById('namesBtn').classList.toggle('on', showNames);
+  document.getElementById('ratingsBtn').classList.toggle('on', showRatings);
+  setMode('move');
+  renderAll();
+  ajustarPitch();
+  setTimeout(ajustarPitch, 80);
+  setTimeout(ajustarPitch, 350);
+  history = [];
+  setTimeout(() => toast('⚪🔴 ¡Vamos, Cultu! Pizarra lista'), 500);
+}
+boot();
+</script>
+</body>
+</html>
